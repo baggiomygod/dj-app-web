@@ -4,48 +4,51 @@ import qs from 'qs'
 import Cookies from 'js-cookie'
 
 const prefix = '/dj_api/'
-// 获取gif列表
-export const getGifs = () => {
+export const gifAdd = (data: any) => {
   return service({
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    url: `${prefix}video2gif/gifs/`,
-    method: 'get',
-  });
-}
-
-// 获取gif列表
-export const getVideos = () => {
-  return service({
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    url: `${prefix}video2gif/videos/`,
-    method: 'get',
-  });
-}
-
-
-// 上传文件
-export const uploadFile = (data) => {
-  return service({
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-    url: `${prefix}video2gif/video_add/`,
+    url: `${prefix}video2gif/gifs/add/`,
     method: 'post',
     data
   });
 }
 
-export const uploadGif = (data) => {
+
+// 上传文件
+export const addVideo = (data: any) => {
   return service({
     headers: {
       'Content-Type': 'multipart/form-data',
     },
-    url: `${prefix}video2gif/gif_add/`,
+    url: `${prefix}video2gif/videos/add/`,
     method: 'post',
+    data
+  });
+}
+
+
+
+export const apiRequest = (url: string, method: string, data?:any) => {
+  return service({
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    url: `${prefix}${url}`,
+    method,
+    data
+  });
+}
+
+export const genGif = (data:any) => {
+  return service({
+    headers: {
+      'Content-Type': 'application/json;charset=utf-8',
+    },
+    url: `${prefix}video2gif/videos/${data.id}/convert_to_gif/`,
+    method: 'post',
+    responseType: 'blob',
     data
   });
 }

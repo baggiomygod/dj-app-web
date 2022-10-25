@@ -23,6 +23,11 @@ module.exports = {
           '^/dj_api': ''
         }
       },
+      '^/files': {
+        target: 'http://127.0.0.1:8930',
+        changeOrigin: true,
+        logLevel: 'debug',
+      },
     },
   },
   pluginOptions: {

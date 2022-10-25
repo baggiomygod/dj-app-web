@@ -1,60 +1,76 @@
 <template>
 <div>
-   <section class="login-container">
-  </section>
-  <a-row :gutter="10">
-    <a-col :span="4">
-      <a-button size="large" type="primary" @click="getToken">csrf token</a-button>
+  <a-row  :gutter="10">
+    <a-col :span="12">
+      <a-input v-model="apiUrl">
+      <template #addonAfter>
+        <a-select v-model="methods" style="width: 80px">
+          <a-select-option value="post">post</a-select-option>
+          <a-select-option value="get">get</a-select-option>
+        </a-select>
+      </template>
+    </a-input>
     </a-col>
     <a-col :span="4">
-      <a-button size="large" type="primary" @click="login">Login django</a-button>
-      <a-button size="large" type="primary" @click="loginError">Login error</a-button>
+      <a-button type="primary" @click="doRequest">send</a-button>
     </a-col>
-    <a-col :span="4">
-      <a-button size="large" type="primary" @click="rereshToken">reresh token</a-button>
-    </a-col>
-    <a-col :span="4">
-      <a-button size="large" type="primary" @click="verifyToken">verify token</a-button>
-    </a-col>
-    <a-col :span="4">
-      <a-button size="large" type="primary" @click="getGifsList">Gifs</a-button>
-    </a-col>
-    <a-col :span="4">
-      <a-button size="large" type="primary" @click="getVideosList">Videos</a-button>
-    </a-col>
-  </a-row>
 
-    <a-row :gutter="10">
-        <a-col :span="4">
-          <a-upload
+  </a-row>
+  <a-row :gutter="10" class="mt-10">
+    <a-col :span="4">
+      <a-button size="small" type="primary" @click="getToken">csrf token</a-button>
+    </a-col>
+    <a-col :span="4">
+      <a-button size="small" type="primary" @click="login">Login django</a-button>
+    </a-col>
+    <a-col :span="4">
+      <a-button size="small" type="primary" @click="loginError">Login error</a-button>
+    </a-col>
+    <a-col :span="4">
+      <a-button size="small" type="primary" @click="rereshToken">reresh token</a-button>
+    </a-col>
+    <a-col :span="4">
+      <a-button size="small" type="primary" @click="verifyToken">verify token</a-button>
+    </a-col>
+    
+  </a-row>
+    <a-row :gutter="10" class="mt-10">
+      <a-col :span="4">
+
+        <a-upload
             :file-list="fileList"
             name="file"
-            :customRequest="handleUploadVideo"
+            :customRequest="uploadGif"
           >
             <a-button>
               <upload-outlined></upload-outlined>
-              Click to Upload Video
+              add gif
             </a-button>
           </a-upload>
-        </a-col>
-
+    </a-col>
         <a-col :span="4">
           <a-upload
             :file-list="fileList"
             name="file"
-            :customRequest="handleUploadGif"
+            :customRequest="uploadVideo"
           >
             <a-button>
               <upload-outlined></upload-outlined>
-              Click to Upload Gif
+              Upload Video
             </a-button>
           </a-upload>
         </a-col>
     </a-row>
     
-  <div class="json-pretty-wrap">
-    <vue-json-pretty :path="'res'" :data="resJson"> </vue-json-pretty>
-  </div>
+  <a-row class="json-pretty-wrap" :gutter="10">
+    <a-col :span="12">
+          <vue-json-editor v-model="params" ></vue-json-editor>
+    </a-col>
+    <a-col :span="12">
+      <vue-json-pretty :path="'res'" :data="resJson"> </vue-json-pretty>
+      <img :src="imgUrl">
+    </a-col>
+  </a-row>
 </div>
  
 </template>
@@ -62,6 +78,7 @@
 <script lang="ts">
 import { Component, Vue, Watch } from "vue-property-decorator";
 import VueJsonPretty from 'vue-json-pretty';
+import VueJsonEditor from 'vue-json-editor';
 import 'vue-json-pretty/lib/styles.css';
 import { message } from 'ant-design-vue';
 
@@ -69,7 +86,7 @@ import { message } from 'ant-design-vue';
 import VueRouter from "vue-router";
 import { State, namespace } from "vuex-class";
 import {djLogin, getCsrfToken, refreshAuthToken, verifyAuthToken} from '@/apis/dj-api/common'
-import {getVideos, getGifs, uploadFile, uploadGif} from '@/apis/dj-api/video2gif'
+import { addVideo, gifAdd, apiRequest} from '@/apis/dj-api/video2gif'
 import Cookies from 'js-cookie'
 
 const someModule = namespace("app");
@@ -78,10 +95,15 @@ const someModule = namespace("app");
 @Component({
   components: {
     VueJsonPretty,
+    VueJsonEditor
   },
 })
 export default class Login extends Vue {
+  apiUrl='video2gif/videos/'
+  methods = 'post'
+  params = {}
   resJson = {}
+  imgUrl = ''
   fileList = [] // 上传文件
   $router!: VueRouter;
   $apollo!: any;
@@ -90,6 +112,17 @@ export default class Login extends Vue {
 
   created() {}
   mounted() {}
+
+  // 发送请求
+  async doRequest(){
+    this.imgUrl = ''
+    const res = await apiRequest(this.apiUrl, this.methods, this.params)
+    this.resJson = res
+    if (res.data.type === 'img_url') {
+      this.imgUrl = res.data.url
+    }
+
+  }
   // csrf token
   async getToken(){
     const res: any = await getCsrfToken()
@@ -146,23 +179,20 @@ export default class Login extends Vue {
     console.log('verifyToken:', res)
   }
 
-  // gifs
-  async getGifsList() {
-    const res = await getGifs()
-    this.resJson = res
-    console.log(res)
-  }
-  // videos
-  async getVideosList() {
-    const res = await getVideos()
-    this.resJson = res
-    console.log(res)
-  }
-  async handleUploadVideo(options: any){
+ 
+  async uploadGif(options: any){
     let params = new FormData();
     params.append("url", options.file);
     params.append("name", `test-${Math.random()}`);
-    const res = await uploadFile(params)
+    const res = await gifAdd(params)
+    this.resJson = res
+  }
+ 
+  async uploadVideo(options: any){
+    let params = new FormData();
+    params.append("url", options.file);
+    params.append("name", `test-${Math.random()}`);
+    const res = await addVideo(params)
     this.resJson = res
   }
   async handleChange (info: any) {
@@ -176,17 +206,11 @@ export default class Login extends Vue {
       }
   }
 
-async handleUploadGif(options: any){
-    let params = new FormData();
-    params.append("url", options.file);
-    params.append("name", `test-${Math.random()}`);
-    const res = await uploadGif(params)
-    this.resJson = res
-  }
   @Watch("token")
   onToken(newVal: string) {
     console.log(newVal);
   }
+  
 }
 </script>
 
@@ -198,8 +222,9 @@ async handleUploadGif(options: any){
 }
 
 .json-pretty-wrap{
+  min-height: 300px;
   padding: 10px;
-    background-color: rgba(0,0,0,0.6);
+    background-color: rgba(255,255,255,0.6);
     margin: 10px;
     overflow: scroll;
 }

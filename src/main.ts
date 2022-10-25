@@ -5,6 +5,7 @@ import App from "./App.vue";
 import routes from "./routes";
 import startQiankun from "./micro";
 import "./assets/styles/locale.antd.css";
+import "./assets/styles/global.css";
 import store from './store'
 Vue.use(VueRouter);
 Vue.use(Antd);
